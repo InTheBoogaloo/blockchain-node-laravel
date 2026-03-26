@@ -1,0 +1,506 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Blockchain Node API - Laravel",
+        "description": "API REST para nodo blockchain distribuido de grados académicos. Implementa Proof of Work, consenso distribuido y propagación entre nodos.",
+        "contact": {
+            "email": "admin@blockchain-node.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8004",
+            "description": "Nodo Laravel - Puerto 8004"
+        }
+    ],
+    "paths": {
+        "/api": {},
+        "/api/chain": {
+            "get": {
+                "tags": [
+                    "Blockchain"
+                ],
+                "summary": "Obtener la cadena completa de bloques",
+                "description": "Retorna todos los bloques de la cadena local ordenados cronológicamente.",
+                "operationId": "4b73e818f498cab6ade6cefe9a0f0c4b",
+                "responses": {
+                    "200": {
+                        "description": "Cadena obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "chain": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "length": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mine": {
+            "post": {
+                "tags": [
+                    "Blockchain"
+                ],
+                "summary": "Minar transacciones pendientes",
+                "description": "Ejecuta el Proof of Work sobre las transacciones pendientes, genera nuevos bloques, los agrega a la cadena local y los propaga a los demás nodos.",
+                "operationId": "f1d103ed39834cccbcfbb08092b597eb",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "firmado_por": {
+                                        "type": "string",
+                                        "example": "nodo-laravel-8004"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Bloques minados correctamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string"
+                                        },
+                                        "bloques": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No hay transacciones pendientes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string",
+                                            "example": "No hay transacciones pendientes para minar"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/blocks/receive": {
+            "post": {
+                "tags": [
+                    "Blockchain"
+                ],
+                "summary": "Recibir un bloque de otro nodo",
+                "description": "Valida y agrega a la cadena local un bloque recibido de otro nodo de la red. Verifica hash, hash anterior y Proof of Work.",
+                "operationId": "8694001819fdffff46f3b35d447b79f7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id",
+                                    "persona_id",
+                                    "institucion_id",
+                                    "titulo_obtenido",
+                                    "fecha_fin",
+                                    "hash_actual",
+                                    "hash_anterior",
+                                    "nonce"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "persona_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "institucion_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "titulo_obtenido": {
+                                        "type": "string"
+                                    },
+                                    "fecha_fin": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "hash_actual": {
+                                        "type": "string"
+                                    },
+                                    "hash_anterior": {
+                                        "type": "string"
+                                    },
+                                    "nonce": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Bloque aceptado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string",
+                                            "example": "Bloque aceptado y agregado a la cadena"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bloque inválido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string",
+                                            "example": "Bloque inválido"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/register": {
+            "post": {
+                "tags": [
+                    "Nodos"
+                ],
+                "summary": "Registrar un nodo en la red",
+                "description": "Agrega la URL de otro nodo a la lista de nodos conocidos para habilitar la propagación y el consenso.",
+                "operationId": "935e0c34cef8b526ad7884002d7d0c37",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "url"
+                                ],
+                                "properties": {
+                                    "url": {
+                                        "type": "string",
+                                        "example": "http://localhost:8001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Nodo registrado correctamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string",
+                                            "example": "Nodo registrado correctamente"
+                                        },
+                                        "nodo": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "URL inválida",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes": {
+            "get": {
+                "tags": [
+                    "Nodos"
+                ],
+                "summary": "Listar nodos registrados",
+                "description": "Retorna todos los nodos conocidos por este nodo en la red.",
+                "operationId": "781a45787aeadeb1cef1b588b0ff66eb",
+                "responses": {
+                    "200": {
+                        "description": "Lista de nodos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "nodos": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/nodes/resolve": {
+            "get": {
+                "tags": [
+                    "Nodos"
+                ],
+                "summary": "Resolver conflictos por consenso",
+                "description": "Consulta la cadena de todos los nodos registrados y adopta la cadena válida más larga. Implementa el algoritmo de consenso distribuido.",
+                "operationId": "dcc15df259bc8e756702af758f7cc4f4",
+                "responses": {
+                    "200": {
+                        "description": "Consenso ejecutado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string",
+                                            "example": "La cadena local ya es la más larga"
+                                        },
+                                        "cadena": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions": {
+            "post": {
+                "tags": [
+                    "Transacciones"
+                ],
+                "summary": "Crear una nueva transacción",
+                "description": "Recibe los datos de un grado académico, los guarda como transacción pendiente y los propaga a todos los nodos registrados en la red.",
+                "operationId": "ab765dced58cfe2f620929db31452145",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "persona_id",
+                                    "institucion_id",
+                                    "programa_id",
+                                    "titulo_obtenido",
+                                    "fecha_fin"
+                                ],
+                                "properties": {
+                                    "persona_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "286cd43f-f789-4903-9ae6-de288bd81e25"
+                                    },
+                                    "institucion_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "8a488bb8-f8d8-48da-a88e-2abd852aea84"
+                                    },
+                                    "programa_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "6df0a016-a1d7-4ee4-ac92-9af454b9454f"
+                                    },
+                                    "titulo_obtenido": {
+                                        "type": "string",
+                                        "example": "Ingeniero en Sistemas Computacionales"
+                                    },
+                                    "fecha_inicio": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2019-08-01"
+                                    },
+                                    "fecha_fin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-15"
+                                    },
+                                    "numero_cedula": {
+                                        "type": "string",
+                                        "example": "12345678"
+                                    },
+                                    "titulo_tesis": {
+                                        "type": "string",
+                                        "example": "Implementación de redes neuronales"
+                                    },
+                                    "menciones": {
+                                        "type": "string",
+                                        "example": "Cum Laude"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Transacción creada y propagada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "mensaje": {
+                                            "type": "string",
+                                            "example": "Transacción agregada y propagada"
+                                        },
+                                        "transaccion": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos inválidos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/pending": {
+            "get": {
+                "tags": [
+                    "Transacciones"
+                ],
+                "summary": "Listar transacciones pendientes",
+                "description": "Retorna todas las transacciones que aún no han sido incluidas en un bloque minado.",
+                "operationId": "96a5549e5cd04c8505aeb8f4c622cf9e",
+                "responses": {
+                    "200": {
+                        "description": "Lista de transacciones pendientes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "transacciones_pendientes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Blockchain",
+            "description": "Cadena de bloques y minado"
+        },
+        {
+            "name": "Transacciones",
+            "description": "Gestión de transacciones pendientes"
+        },
+        {
+            "name": "Nodos",
+            "description": "Registro y sincronización de nodos"
+        }
+    ]
+}

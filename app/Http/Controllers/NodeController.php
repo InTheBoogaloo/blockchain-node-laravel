@@ -17,7 +17,37 @@ class NodeController extends Controller
         $this->blockchain = $blockchain;
     }
 
-    // POST /nodes/register
+    /**
+     * @OA\Post(
+     *     path="/api/nodes/register",
+     *     tags={"Nodos"},
+     *     summary="Registrar un nodo en la red",
+     *     description="Agrega la URL de otro nodo a la lista de nodos conocidos para habilitar la propagación y el consenso.",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"url"},
+     *             @OA\Property(property="url", type="string", example="http://localhost:8001")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Nodo registrado correctamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="mensaje", type="string", example="Nodo registrado correctamente"),
+     *             @OA\Property(property="nodo", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="URL inválida",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
     public function register(Request $request)
     {
         $request->validate([
@@ -39,7 +69,22 @@ class NodeController extends Controller
         ], 201);
     }
 
-    // GET /nodes
+    /**
+     * @OA\Get(
+     *     path="/api/nodes",
+     *     tags={"Nodos"},
+     *     summary="Listar nodos registrados",
+     *     description="Retorna todos los nodos conocidos por este nodo en la red.",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de nodos",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="nodos", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="integer", example=3)
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
         $nodos = Nodo::all();
@@ -51,7 +96,22 @@ class NodeController extends Controller
         ]);
     }
 
-    // GET /nodes/resolve
+    /**
+     * @OA\Get(
+     *     path="/api/nodes/resolve",
+     *     tags={"Nodos"},
+     *     summary="Resolver conflictos por consenso",
+     *     description="Consulta la cadena de todos los nodos registrados y adopta la cadena válida más larga. Implementa el algoritmo de consenso distribuido.",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Consenso ejecutado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="mensaje", type="string", example="La cadena local ya es la más larga"),
+     *             @OA\Property(property="cadena", type="array", @OA\Items(type="object"))
+     *         )
+     *     )
+     * )
+     */
     public function resolve()
     {
         $resultado = $this->blockchain->resolverConflictos();
