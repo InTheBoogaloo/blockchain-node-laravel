@@ -84,7 +84,7 @@ class BlockchainService
             $bloque['titulo_obtenido'],
             $bloque['fecha_fin'],
             $bloque['hash_anterior'],
-            $bloque['nonce']
+            (int) $bloque['nonce']
         );
 
         if ($hashCalculado !== $bloque['hash_actual']) {
@@ -121,17 +121,17 @@ class BlockchainService
     public function agregarTransaccion(array $datos): TransaccionPendiente
     {
         $transaccion = TransaccionPendiente::create([
-            'id'             => Str::uuid(),
-            'persona_id'     => $datos['persona_id'],
-            'institucion_id' => $datos['institucion_id'],
-            'programa_id'    => $datos['programa_id'],
-            'titulo_obtenido'=> $datos['titulo_obtenido'],
-            'fecha_inicio'   => $datos['fecha_inicio'] ?? null,
-            'fecha_fin'      => $datos['fecha_fin'],
-            'numero_cedula'  => $datos['numero_cedula'] ?? null,
-            'titulo_tesis'   => $datos['titulo_tesis'] ?? null,
-            'menciones'      => $datos['menciones'] ?? null,
-            'creado_en'      => now(),
+            'id'              => Str::uuid(),
+            'persona_id'      => $datos['persona_id'],
+            'institucion_id'  => $datos['institucion_id'],
+            'programa_id'     => $datos['programa_id'],
+            'titulo_obtenido' => $datos['titulo_obtenido'],
+            'fecha_inicio'    => $datos['fecha_inicio'] ?? null,
+            'fecha_fin'       => $datos['fecha_fin'],
+            'numero_cedula'   => $datos['numero_cedula'] ?? null,
+            'titulo_tesis'    => $datos['titulo_tesis'] ?? null,
+            'menciones'       => $datos['menciones'] ?? null,
+            'creado_en'       => now(),
         ]);
 
         Log::info("[Blockchain] Transacción agregada: {$transaccion->id}");
@@ -168,28 +168,28 @@ class BlockchainService
             );
 
             $grado = Grado::create([
-                'id'             => Str::uuid(),
-                'persona_id'     => $tx->persona_id,
-                'institucion_id' => $tx->institucion_id,
-                'programa_id'    => $tx->programa_id,
-                'titulo_obtenido'=> $tx->titulo_obtenido,
-                'fecha_inicio'   => $tx->fecha_inicio,
-                'fecha_fin'      => $tx->fecha_fin,
-                'numero_cedula'  => $tx->numero_cedula,
-                'titulo_tesis'   => $tx->titulo_tesis,
-                'menciones'      => $tx->menciones,
-                'hash_actual'    => $pow['hash'],
-                'hash_anterior'  => $hashAnterior,
-                'nonce'          => $pow['nonce'],
-                'firmado_por'    => $firmadoPor,
-                'creado_en'      => now(),
+                'id'              => Str::uuid(),
+                'persona_id'      => $tx->persona_id,
+                'institucion_id'  => $tx->institucion_id,
+                'programa_id'     => $tx->programa_id,
+                'titulo_obtenido' => $tx->titulo_obtenido,
+                'fecha_inicio'    => $tx->fecha_inicio,
+                'fecha_fin'       => $tx->fecha_fin,
+                'numero_cedula'   => $tx->numero_cedula,
+                'titulo_tesis'    => $tx->titulo_tesis,
+                'menciones'       => $tx->menciones,
+                'hash_actual'     => $pow['hash'],
+                'hash_anterior'   => $hashAnterior,
+                'nonce'           => $pow['nonce'],
+                'firmado_por'     => $firmadoPor,
+                'creado_en'       => now(),
             ]);
 
             $hashAnterior = $pow['hash'];
             $bloquesMineados[] = $grado->toArray();
             $tx->delete();
 
-            Log::info("[Blockchain] Bloque minado: {$grado->id}");
+            Log::info("[Blockchain] Bloque minado: {$grado->id} | hash: {$pow['hash']}");
         }
 
         return $bloquesMineados;
@@ -206,7 +206,8 @@ class BlockchainService
 
         foreach ($nodos as $nodo) {
             try {
-                $response = Http::timeout(5)->get("{$nodo->url}/chain");
+                // FIX: usar /api/chain (con prefijo)
+                $response = Http::timeout(5)->get("{$nodo->url}/api/chain");
 
                 if ($response->successful()) {
                     $data = $response->json();
@@ -214,7 +215,7 @@ class BlockchainService
                     $longitudRemota = count($cadenaRemota);
 
                     if ($longitudRemota > $longitudActual && $this->validarCadena($cadenaRemota)) {
-                        Log::info("[Consenso] Cadena más larga encontrada en: {$nodo->url}");
+                        Log::info("[Consenso] Cadena más larga encontrada en: {$nodo->url} ({$longitudRemota} bloques)");
                         $this->reemplazarCadena($cadenaRemota);
                         $cadenaActual = $cadenaRemota;
                         $longitudActual = $longitudRemota;
@@ -248,7 +249,8 @@ class BlockchainService
         $nodos = Nodo::all();
         foreach ($nodos as $nodo) {
             try {
-                Http::timeout(5)->post("{$nodo->url}/transactions", $datos);
+                // FIX: usar /api/transactions (con prefijo)
+                Http::timeout(5)->post("{$nodo->url}/api/transactions", $datos);
                 Log::info("[Propagación] Transacción enviada a: {$nodo->url}");
             } catch (\Exception $e) {
                 Log::warning("[Propagación] Error enviando a {$nodo->url}: {$e->getMessage()}");
@@ -261,7 +263,8 @@ class BlockchainService
         $nodos = Nodo::all();
         foreach ($nodos as $nodo) {
             try {
-                Http::timeout(5)->post("{$nodo->url}/blocks/receive", $bloque);
+                // FIX: usar /api/blocks/receive (con prefijo)
+                Http::timeout(5)->post("{$nodo->url}/api/blocks/receive", $bloque);
                 Log::info("[Propagación] Bloque enviado a: {$nodo->url}");
             } catch (\Exception $e) {
                 Log::warning("[Propagación] Error enviando bloque a {$nodo->url}: {$e->getMessage()}");

@@ -19,3 +19,5 @@ Route::post('/nodes/register', [NodeController::class, 'register']);
 Route::get('/nodes', [NodeController::class, 'index']);
 Route::get('/nodes/resolve', [NodeController::class, 'resolve']);
 
+
+Route::post('/genesis', [BlockchainController::class, 'genesis']);

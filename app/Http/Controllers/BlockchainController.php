@@ -164,4 +164,47 @@ class BlockchainController extends Controller
 
         return response()->json(['mensaje' => 'Bloque aceptado y agregado a la cadena'], 201);
     }
+public function genesis()
+{
+    if (\App\Models\Grado::count() > 0) {
+        return response()->json(['mensaje' => 'La cadena ya tiene bloques'], 400);
+    }
+ 
+    $personaId      = '00000000-0000-0000-0000-000000000000';
+    $institucionId  = '00000000-0000-0000-0000-000000000000';
+    $tituloObtenido = 'GENESIS';
+    $fechaFin       = '2000-01-01';
+    $hashAnterior   = '';
+    $nonce          = 0;
+ 
+    do {
+        $datos = $personaId . $institucionId . $tituloObtenido . $fechaFin . $hashAnterior . $nonce;
+        $hash  = hash('sha256', $datos);
+        $nonce++;
+    } while (!str_starts_with($hash, '000'));
+ 
+    $bloque = \App\Models\Grado::create([
+        'id'              => \Illuminate\Support\Str::uuid(),
+        'persona_id'      => null,
+        'institucion_id'  => null,
+        'programa_id'     => null,
+        'titulo_obtenido' => 'GENESIS',
+        'fecha_fin'       => '2000-01-01',
+        'hash_actual'     => $hash,
+        'hash_anterior'   => null,
+        'nonce'           => $nonce - 1,
+        'firmado_por'     => 'sistema',
+        'creado_en'       => now(),
+    ]);
+ 
+    \Illuminate\Support\Facades\Log::info("[API] Bloque génesis creado: {$hash}");
+ 
+    return response()->json([
+        'mensaje' => 'Bloque génesis creado',
+        'bloque'  => $bloque,
+    ], 201);
 }
+ 
+
+}
+
