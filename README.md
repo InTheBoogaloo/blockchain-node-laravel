@@ -85,6 +85,12 @@ routes/
 
 ## API Endpoints
 
+### Documentacion
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | /api/documentation | accede a la documentacion de la API|
+
 ### Blockchain
 
 | Metodo | Endpoint | Descripcion |
