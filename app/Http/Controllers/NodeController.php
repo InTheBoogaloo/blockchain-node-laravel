@@ -19,7 +19,7 @@ class NodeController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/nodes/register",
+     *     path="/nodes/register",
      *     tags={"Nodos"},
      *     summary="Registrar un nodo en la red",
      *     @OA\RequestBody(
@@ -56,7 +56,7 @@ class NodeController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/nodes",
+     *     path="/nodes",
      *     tags={"Nodos"},
      *     summary="Listar nodos registrados",
      *     @OA\Response(response=200, description="Lista de nodos")
@@ -75,7 +75,7 @@ class NodeController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/nodes/resolve",
+     *     path="/nodes/resolve",
      *     tags={"Nodos"},
      *     summary="Resolver conflictos por consenso (longest chain)",
      *     @OA\Response(

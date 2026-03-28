@@ -29,7 +29,7 @@ class BlockchainController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/chain",
+     *     path="/chain",
      *     tags={"Blockchain"},
      *     summary="Obtener la cadena completa de bloques",
      *     @OA\Response(
@@ -55,7 +55,7 @@ class BlockchainController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/mine",
+     *     path="/mine",
      *     tags={"Blockchain"},
      *     summary="Minar transacciones pendientes",
      *     @OA\RequestBody(

@@ -17,7 +17,7 @@ class TransactionController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/transactions",
+     *     path="/transactions",
      *     tags={"Transacciones"},
      *     summary="Crear una nueva transacción",
      *     description="Recibe los datos de un grado académico, los guarda como transacción pendiente y los propaga a todos los nodos registrados en la red.",
@@ -79,7 +79,7 @@ class TransactionController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/transactions/pending",
+     *     path="/transactions/pending",
      *     tags={"Transacciones"},
      *     summary="Listar transacciones pendientes",
      *     description="Retorna todas las transacciones que aún no han sido incluidas en un bloque minado.",
