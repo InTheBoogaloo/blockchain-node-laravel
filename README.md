@@ -89,24 +89,24 @@ routes/
 
 | Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| GET | /api/chain | Obtener la cadena completa |
-| POST | /api/mine | Minar transacciones pendientes |
-| POST | /api/blocks/receive | Recibir bloque de otro nodo |
+| GET | /chain | Obtener la cadena completa |
+| POST | /mine | Minar transacciones pendientes |
+| POST | /blocks/receive | Recibir bloque de otro nodo |
 
 ### Transacciones
 
 | Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| POST | /api/transactions | Crear y propagar transaccion |
-| GET | /api/transactions/pending | Listar transacciones pendientes |
+| POST | /transactions | Crear y propagar transaccion |
+| GET | /transactions/pending | Listar transacciones pendientes |
 
 ### Nodos
 
 | Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| POST | /api/nodes/register | Registrar un nodo en la red |
-| GET | /api/nodes | Listar nodos registrados |
-| GET | /api/nodes/resolve | Resolver conflictos por consenso |
+| POST | /nodes/register | Registrar un nodo en la red |
+| GET | /nodes | Listar nodos registrados |
+| GET | /nodes/resolve | Resolver conflictos por consenso |
 
 ## Logica Blockchain
 
