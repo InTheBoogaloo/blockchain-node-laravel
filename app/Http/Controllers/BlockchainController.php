@@ -10,18 +10,10 @@ use Illuminate\Support\Facades\Log;
  * @OA\Info(
  *     title="Blockchain Node API - Laravel",
  *     version="1.0.0",
- *     description="API REST para nodo blockchain distribuido de grados académicos. Implementa Proof of Work, consenso distribuido y propagación entre nodos.",
- *     @OA\Contact(
- *         email="admin@blockchain-node.com"
- *     )
+ *     description="API REST para nodo blockchain distribuido de grados académicos.",
+ *     @OA\Contact(email="admin@blockchain-node.com")
  * )
- *
- * @OA\Server(
- *     url="http://localhost:8004",
- *     description="Nodo Laravel - Puerto 8004"
- * )
- * @OA\PathItem(path="/api")
- *
+ * @OA\Server(url="http://localhost:8004", description="Nodo Laravel - Puerto 8004")
  * @OA\Tag(name="Blockchain", description="Cadena de bloques y minado")
  * @OA\Tag(name="Transacciones", description="Gestión de transacciones pendientes")
  * @OA\Tag(name="Nodos", description="Registro y sincronización de nodos")
@@ -40,7 +32,6 @@ class BlockchainController extends Controller
      *     path="/api/chain",
      *     tags={"Blockchain"},
      *     summary="Obtener la cadena completa de bloques",
-     *     description="Retorna todos los bloques de la cadena local ordenados cronológicamente.",
      *     @OA\Response(
      *         response=200,
      *         description="Cadena obtenida exitosamente",
@@ -67,28 +58,14 @@ class BlockchainController extends Controller
      *     path="/api/mine",
      *     tags={"Blockchain"},
      *     summary="Minar transacciones pendientes",
-     *     description="Ejecuta el Proof of Work sobre las transacciones pendientes, genera nuevos bloques, los agrega a la cadena local y los propaga a los demás nodos.",
      *     @OA\RequestBody(
      *         required=false,
      *         @OA\JsonContent(
      *             @OA\Property(property="firmado_por", type="string", example="nodo-laravel-8004")
      *         )
      *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Bloques minados correctamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="mensaje", type="string"),
-     *             @OA\Property(property="bloques", type="array", @OA\Items(type="object"))
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="No hay transacciones pendientes",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="mensaje", type="string", example="No hay transacciones pendientes para minar")
-     *         )
-     *     )
+     *     @OA\Response(response=201, description="Bloques minados correctamente"),
+     *     @OA\Response(response=400, description="No hay transacciones pendientes")
      * )
      */
     public function mine(Request $request)
@@ -117,35 +94,8 @@ class BlockchainController extends Controller
      *     path="/api/blocks/receive",
      *     tags={"Blockchain"},
      *     summary="Recibir un bloque de otro nodo",
-     *     description="Valida y agrega a la cadena local un bloque recibido de otro nodo de la red. Verifica hash, hash anterior y Proof of Work.",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"id","persona_id","institucion_id","titulo_obtenido","fecha_fin","hash_actual","hash_anterior","nonce"},
-     *             @OA\Property(property="id", type="string", format="uuid"),
-     *             @OA\Property(property="persona_id", type="string", format="uuid"),
-     *             @OA\Property(property="institucion_id", type="string", format="uuid"),
-     *             @OA\Property(property="titulo_obtenido", type="string"),
-     *             @OA\Property(property="fecha_fin", type="string", format="date"),
-     *             @OA\Property(property="hash_actual", type="string"),
-     *             @OA\Property(property="hash_anterior", type="string"),
-     *             @OA\Property(property="nonce", type="integer")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Bloque aceptado",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="mensaje", type="string", example="Bloque aceptado y agregado a la cadena")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Bloque inválido",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="mensaje", type="string", example="Bloque inválido")
-     *         )
-     *     )
+     *     @OA\Response(response=201, description="Bloque aceptado"),
+     *     @OA\Response(response=400, description="Bloque inválido")
      * )
      */
     public function receiveBlock(Request $request)
@@ -164,47 +114,89 @@ class BlockchainController extends Controller
 
         return response()->json(['mensaje' => 'Bloque aceptado y agregado a la cadena'], 201);
     }
-public function genesis()
-{
-    if (\App\Models\Grado::count() > 0) {
-        return response()->json(['mensaje' => 'La cadena ya tiene bloques'], 400);
+
+    /**
+     * @OA\Post(
+     *     path="/api/genesis",
+     *     tags={"Blockchain"},
+     *     summary="Crear el bloque génesis",
+     *     @OA\Response(response=201, description="Bloque génesis creado"),
+     *     @OA\Response(response=400, description="La cadena ya tiene bloques")
+     * )
+     */
+    public function genesis()
+    {
+        if (\App\Models\Grado::count() > 0) {
+            return response()->json(['mensaje' => 'La cadena ya tiene bloques'], 400);
+        }
+
+        // IMPORTANTE: para el hash, persona_id e institucion_id se tratan como
+        // string vacío "" porque en génesis son null — igual que hacen los demás nodos.
+        $personaId      = '';
+        $institucionId  = '';
+        $tituloObtenido = 'GENESIS';
+        $fechaFin       = '2000-01-01';
+        $hashAnterior   = '';
+        $nonce          = 0;
+
+        do {
+            $datos = $personaId . $institucionId . $tituloObtenido . $fechaFin . $hashAnterior . $nonce;
+            $hash  = hash('sha256', $datos);
+            $nonce++;
+        } while (!str_starts_with($hash, '000'));
+
+        $bloque = \App\Models\Grado::create([
+            'id'              => \Illuminate\Support\Str::uuid(),
+            'persona_id'      => null,
+            'institucion_id'  => null,
+            'programa_id'     => null,
+            'titulo_obtenido' => 'GENESIS',
+            'fecha_fin'       => '2000-01-01',
+            'hash_actual'     => $hash,
+            'hash_anterior'   => null,
+            'nonce'           => $nonce - 1,
+            'firmado_por'     => 'sistema',
+            'creado_en'       => now(),
+        ]);
+
+        Log::info("[API] Bloque génesis creado: {$hash}");
+
+        return response()->json([
+            'mensaje' => 'Bloque génesis creado',
+            'bloque'  => $bloque,
+        ], 201);
     }
- 
-    $personaId      = '00000000-0000-0000-0000-000000000000';
-    $institucionId  = '00000000-0000-0000-0000-000000000000';
-    $tituloObtenido = 'GENESIS';
-    $fechaFin       = '2000-01-01';
-    $hashAnterior   = '';
-    $nonce          = 0;
- 
-    do {
-        $datos = $personaId . $institucionId . $tituloObtenido . $fechaFin . $hashAnterior . $nonce;
-        $hash  = hash('sha256', $datos);
-        $nonce++;
-    } while (!str_starts_with($hash, '000'));
- 
-    $bloque = \App\Models\Grado::create([
-        'id'              => \Illuminate\Support\Str::uuid(),
-        'persona_id'      => null,
-        'institucion_id'  => null,
-        'programa_id'     => null,
-        'titulo_obtenido' => 'GENESIS',
-        'fecha_fin'       => '2000-01-01',
-        'hash_actual'     => $hash,
-        'hash_anterior'   => null,
-        'nonce'           => $nonce - 1,
-        'firmado_por'     => 'sistema',
-        'creado_en'       => now(),
-    ]);
- 
-    \Illuminate\Support\Facades\Log::info("[API] Bloque génesis creado: {$hash}");
- 
-    return response()->json([
-        'mensaje' => 'Bloque génesis creado',
-        'bloque'  => $bloque,
-    ], 201);
-}
- 
 
-}
+    /**
+     * @OA\Get(
+     *     path="/api/health",
+     *     tags={"Blockchain"},
+     *     summary="Estado del nodo",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estado del nodo",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="ok"),
+     *             @OA\Property(property="node_id", type="string", example="nodo-laravel-8004"),
+     *             @OA\Property(property="pendientes", type="integer", example=0),
+     *             @OA\Property(property="bloques", type="integer", example=1)
+     *         )
+     *     )
+     * )
+     */
+    public function health()
+    {
+        $bloques    = \App\Models\Grado::count();
+        $pendientes = \App\Models\TransaccionPendiente::count();
+        $nodeId     = env('NODE_ID', 'nodo-laravel-8004');
 
+        Log::info("[API] GET /health - bloques: {$bloques}, pendientes: {$pendientes}");
+
+        return response()->json([
+            'status'     => 'ok',
+            'node_id'    => $nodeId,
+            'pendientes' => $pendientes,
+            'bloques'    => $bloques,
+        ]);
+    }
+}

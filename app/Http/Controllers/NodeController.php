@@ -22,7 +22,6 @@ class NodeController extends Controller
      *     path="/api/nodes/register",
      *     tags={"Nodos"},
      *     summary="Registrar un nodo en la red",
-     *     description="Agrega la URL de otro nodo a la lista de nodos conocidos para habilitar la propagación y el consenso.",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -30,22 +29,8 @@ class NodeController extends Controller
      *             @OA\Property(property="url", type="string", example="http://localhost:8001")
      *         )
      *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Nodo registrado correctamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="mensaje", type="string", example="Nodo registrado correctamente"),
-     *             @OA\Property(property="nodo", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="URL inválida",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string"),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     )
+     *     @OA\Response(response=201, description="Nodo registrado correctamente"),
+     *     @OA\Response(response=422, description="URL inválida")
      * )
      */
     public function register(Request $request)
@@ -74,15 +59,7 @@ class NodeController extends Controller
      *     path="/api/nodes",
      *     tags={"Nodos"},
      *     summary="Listar nodos registrados",
-     *     description="Retorna todos los nodos conocidos por este nodo en la red.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Lista de nodos",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="nodos", type="array", @OA\Items(type="object")),
-     *             @OA\Property(property="total", type="integer", example=3)
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="Lista de nodos")
      * )
      */
     public function index()
@@ -100,14 +77,13 @@ class NodeController extends Controller
      * @OA\Get(
      *     path="/api/nodes/resolve",
      *     tags={"Nodos"},
-     *     summary="Resolver conflictos por consenso",
-     *     description="Consulta la cadena de todos los nodos registrados y adopta la cadena válida más larga. Implementa el algoritmo de consenso distribuido.",
+     *     summary="Resolver conflictos por consenso (longest chain)",
      *     @OA\Response(
      *         response=200,
      *         description="Consenso ejecutado",
      *         @OA\JsonContent(
      *             @OA\Property(property="mensaje", type="string", example="La cadena local ya es la más larga"),
-     *             @OA\Property(property="cadena", type="array", @OA\Items(type="object"))
+     *             @OA\Property(property="longitud", type="integer", example=5)
      *         )
      *     )
      * )
@@ -118,10 +94,10 @@ class NodeController extends Controller
         Log::info("[API] GET /nodes/resolve - reemplazada: " . ($resultado['reemplazada'] ? 'sí' : 'no'));
 
         return response()->json([
-            'mensaje' => $resultado['reemplazada']
+            'mensaje'  => $resultado['reemplazada']
                 ? 'Cadena reemplazada por una más larga y válida'
                 : 'La cadena local ya es la más larga',
-            'cadena'  => $resultado['cadena'],
+            'longitud' => count($resultado['cadena']),  // FIX: número, no el array
         ]);
     }
 }

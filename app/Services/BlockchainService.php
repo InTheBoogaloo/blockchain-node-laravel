@@ -13,6 +13,23 @@ class BlockchainService
 {
     const DIFICULTAD = '000';
 
+    // ─── Detectar prefijo del nodo ────────────────────────────
+    // Laravel y NextJS usan /api/, Flask y Express no usan prefijo
+
+    private function obtenerPrefijo(string $url): string
+    {
+        // Intentar con /api/chain primero
+        try {
+            $response = Http::timeout(3)->get("{$url}/api/chain");
+            if ($response->successful()) {
+                return '/api';
+            }
+        } catch (\Exception $e) {}
+
+        // Sin prefijo
+        return '';
+    }
+
     // ─── Cadena ───────────────────────────────────────────────
 
     public function obtenerCadena(): array
@@ -72,29 +89,29 @@ class BlockchainService
     {
         // Verificar hash anterior
         $hashEsperado = $bloqueAnterior ? $bloqueAnterior['hash_actual'] : '';
-        if ($bloque['hash_anterior'] !== $hashEsperado) {
-            Log::warning("[Blockchain] Hash anterior inválido en bloque: {$bloque['id']}");
+        if (($bloque['hash_anterior'] ?? '') !== $hashEsperado) {
+            Log::warning("[Blockchain] Hash anterior inválido en bloque: " . ($bloque['id'] ?? '?'));
             return false;
         }
 
         // Recalcular hash
         $hashCalculado = $this->calcularHash(
-            $bloque['persona_id'],
-            $bloque['institucion_id'],
-            $bloque['titulo_obtenido'],
-            $bloque['fecha_fin'],
-            $bloque['hash_anterior'],
-            (int) $bloque['nonce']
+            $bloque['persona_id'] ?? '',
+            $bloque['institucion_id'] ?? '',
+            $bloque['titulo_obtenido'] ?? '',
+            $bloque['fecha_fin'] ?? '',
+            $bloque['hash_anterior'] ?? '',
+            (int) ($bloque['nonce'] ?? 0)
         );
 
         if ($hashCalculado !== $bloque['hash_actual']) {
-            Log::warning("[Blockchain] Hash actual inválido en bloque: {$bloque['id']}");
+            Log::warning("[Blockchain] Hash actual inválido en bloque: " . ($bloque['id'] ?? '?'));
             return false;
         }
 
         // Verificar Proof of Work
         if (!str_starts_with($bloque['hash_actual'], self::DIFICULTAD)) {
-            Log::warning("[Blockchain] PoW inválido en bloque: {$bloque['id']}");
+            Log::warning("[Blockchain] PoW inválido en bloque: " . ($bloque['id'] ?? '?'));
             return false;
         }
 
@@ -107,6 +124,7 @@ class BlockchainService
     {
         if (empty($cadena)) return true;
 
+        // Saltar el bloque génesis (index 0) en la validación
         for ($i = 1; $i < count($cadena); $i++) {
             if (!$this->validarBloque($cadena[$i], $cadena[$i - 1])) {
                 return false;
@@ -206,16 +224,22 @@ class BlockchainService
 
         foreach ($nodos as $nodo) {
             try {
-                // FIX: usar /api/chain (con prefijo)
-                $response = Http::timeout(5)->get("{$nodo->url}/api/chain");
+                // FIX: detectar prefijo automáticamente
+                $prefijo = $this->obtenerPrefijo($nodo->url);
+                $response = Http::timeout(5)->get("{$nodo->url}{$prefijo}/chain");
 
                 if ($response->successful()) {
                     $data = $response->json();
-                    $cadenaRemota = $data['chain'] ?? [];
-                    $longitudRemota = count($cadenaRemota);
+
+                    // FIX: aceptar tanto 'chain' como 'cadena'
+                    $cadenaRemota = $data['chain'] ?? $data['cadena'] ?? [];
+                    // FIX: aceptar tanto 'length' como 'longitud'
+                    $longitudRemota = $data['length'] ?? $data['longitud'] ?? count($cadenaRemota);
+
+                    Log::info("[Consenso] Nodo {$nodo->url}: {$longitudRemota} bloques");
 
                     if ($longitudRemota > $longitudActual && $this->validarCadena($cadenaRemota)) {
-                        Log::info("[Consenso] Cadena más larga encontrada en: {$nodo->url} ({$longitudRemota} bloques)");
+                        Log::info("[Consenso] Cadena más larga encontrada en: {$nodo->url}");
                         $this->reemplazarCadena($cadenaRemota);
                         $cadenaActual = $cadenaRemota;
                         $longitudActual = $longitudRemota;
@@ -249,9 +273,10 @@ class BlockchainService
         $nodos = Nodo::all();
         foreach ($nodos as $nodo) {
             try {
-                // FIX: usar /api/transactions (con prefijo)
-                Http::timeout(5)->post("{$nodo->url}/api/transactions", $datos);
-                Log::info("[Propagación] Transacción enviada a: {$nodo->url}");
+                // FIX: detectar prefijo automáticamente
+                $prefijo = $this->obtenerPrefijo($nodo->url);
+                Http::timeout(5)->post("{$nodo->url}{$prefijo}/transactions", $datos);
+                Log::info("[Propagación] Transacción enviada a: {$nodo->url}{$prefijo}");
             } catch (\Exception $e) {
                 Log::warning("[Propagación] Error enviando a {$nodo->url}: {$e->getMessage()}");
             }
@@ -263,9 +288,10 @@ class BlockchainService
         $nodos = Nodo::all();
         foreach ($nodos as $nodo) {
             try {
-                // FIX: usar /api/blocks/receive (con prefijo)
-                Http::timeout(5)->post("{$nodo->url}/api/blocks/receive", $bloque);
-                Log::info("[Propagación] Bloque enviado a: {$nodo->url}");
+                // FIX: detectar prefijo automáticamente
+                $prefijo = $this->obtenerPrefijo($nodo->url);
+                Http::timeout(5)->post("{$nodo->url}{$prefijo}/blocks/receive", $bloque);
+                Log::info("[Propagación] Bloque enviado a: {$nodo->url}{$prefijo}");
             } catch (\Exception $e) {
                 Log::warning("[Propagación] Error enviando bloque a {$nodo->url}: {$e->getMessage()}");
             }
