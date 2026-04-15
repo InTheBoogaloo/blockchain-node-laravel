@@ -24,3 +24,4 @@ Route::post('/genesis', [BlockchainController::class, 'genesis']);
 
 // ─── Health ───────────────────────────────────────────────────
 Route::get('/health', [BlockchainController::class, 'health']);
+Route::get('/health', function () { return response()->json(['status' => 'ok']); });
