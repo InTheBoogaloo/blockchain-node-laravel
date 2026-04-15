@@ -1,12 +1,26 @@
-[phases.setup]
-nixPkgs = ["php84", "php84Packages.composer", "nodejs_22", "nodePackages.npm"]
+#[phases.setup]
+#nixPkgs = ["php84", "php84Packages.composer", "nodejs_22", "nodePackages."]
 
-[phases.setup.environment]
-NIXPACKS_PHP_VERSION = "8.4"
+#[phases.setup.environment]
+#NIXPACKS_PHP_VERSION = "8.4"
+
+#[phases.build]
+#cmds = [
+#   "composer install --optimize-autoloader --no-dev --no-scripts --no-interaction",
+#   "npm install",
+#   "npm run build"
+# ]
+
+# [start]
+# cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+
+[phases.setup]
+nixPkgs = ["php84", "php84Packages.composer", "nodejs_22"]
 
 [phases.build]
 cmds = [
-  "composer install --optimize-autoloader --no-dev --no-scripts --no-interaction",
+  "node -v",
+  "rm -rf node_modules package-lock.json",
   "npm install",
   "npm run build"
 ]
